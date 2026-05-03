@@ -83,8 +83,7 @@ WSGI_APPLICATION = 'payment_gateway_api.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('postgresql://leadmax_user:JWklnvvuqpDq4Qi6F7F9RUrW19m8ODqk@dpg-d7rm0ql7vvec73e94mdg-a/leadmax_db'),
-        conn_max_age=600
+        default=os.getenv('DATABASE_URL')
     )
 }
 
