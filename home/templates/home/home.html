@@ -229,7 +229,7 @@
                 first_name: document.getElementById('reg-fn').value,
                 last_name: document.getElementById('reg-ln').value
             };
-            const res = await fetch(`${API_BASE}/users/`, {
+            const res = await fetch(`${API_BASE}/users/register/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
