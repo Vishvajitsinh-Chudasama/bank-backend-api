@@ -100,10 +100,26 @@
         .balance { font-size: 1.8rem; font-weight: 800; color: var(--text-main); }
         .hidden { display: none !important; }
 
+        /* --- API DOCS --- */
+        .api-intro { color: var(--text-muted); font-size: 0.95rem; margin: 0 0 1rem; }
+        code.inline {
+            font-family: ui-monospace, monospace;
+            font-size: 0.82em;
+            background: #eef2ff;
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+        }
+
         .table-wrap { overflow-x: auto; width: 100%; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th { text-align: left; padding: 12px; color: var(--text-muted); border-bottom: 2px solid var(--border); }
         td { padding: 12px; border-bottom: 1px solid var(--border); }
+
+        .api-table { font-size: 0.78rem; }
+        .api-table th { background: var(--bg); vertical-align: bottom; white-space: nowrap; }
+        .api-table td { vertical-align: top; }
+        .api-table td:nth-child(2) { font-family: ui-monospace, monospace; font-size: 0.72rem; word-break: break-all; color: var(--primary-dark); }
+        .api-table tbody tr:nth-child(even) { background: rgba(248,250,252,0.85); }
     </style>
 </head>
 <body>
@@ -113,6 +129,46 @@
             <div class="logo">LeadMAX <span>Bank</span></div>
             <button id="logout-btn" class="btn btn-danger hidden" onclick="logout()" style="width: auto;">Logout</button>
         </header>
+
+        <!-- API overview (matches backend routes under /api/) -->
+        <div class="card" style="margin-bottom: 24px;">
+            <h2 style="margin-top: 0;">REST API overview</h2>
+            <p class="api-intro">
+                All endpoints are served under <code class="inline">/api/</code> as JSON.
+                Live deployment: <a href="https://bank-backend-api.onrender.com/">bank-backend-api.onrender.com</a> — API at <code class="inline">https://bank-backend-api.onrender.com/api</code>.
+                The dashboard script uses <code class="inline">API_BASE</code> below; for local dev, point it at <code class="inline">http://127.0.0.1:8000/api</code>.
+                Protected routes need <code class="inline">Authorization: Bearer &lt;access&gt;</code>. Access tokens expire in 5 minutes; refresh with <code class="inline">POST /api/auth/refresh/</code>.
+                Same catalog as <strong>README.md</strong> (quick reference table).
+            </p>
+            <div class="table-wrap">
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Purpose</th>
+                            <th>Data sent by user</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Identity</td><td>/api/users/register/</td><td>POST</td><td>Sign up a new user.</td><td>Username, Password, Email</td></tr>
+                        <tr><td>Identity</td><td>/api/users/</td><td>GET</td><td>See a list of all users.</td><td>None (Requires Token)</td></tr>
+                        <tr><td>Identity</td><td>/api/users/&lt;id&gt;/</td><td>GET</td><td>View specific user profile.</td><td>ID in URL</td></tr>
+                        <tr><td>Identity</td><td>/api/users/&lt;id&gt;/</td><td>PUT</td><td>Update user details (Name, etc).</td><td>Updated Profile JSON</td></tr>
+                        <tr><td>Identity</td><td>/api/users/&lt;id&gt;/</td><td>DELETE</td><td>Remove user account.</td><td>ID in URL</td></tr>
+                        <tr><td>Security</td><td>/api/auth/login/</td><td>POST</td><td>Get Access/Refresh tokens.</td><td>Username, Password</td></tr>
+                        <tr><td>Security</td><td>/api/auth/refresh/</td><td>POST</td><td>Get new access token.</td><td>Refresh Token</td></tr>
+                        <tr><td>Banking</td><td>/api/accounts/</td><td>GET</td><td>View your bank accounts.</td><td>None (Requires Token)</td></tr>
+                        <tr><td>Banking</td><td>/api/accounts/</td><td>POST</td><td>Create a new account (Max 3).</td><td>None (Auto-generated)</td></tr>
+                        <tr><td>Banking</td><td>/api/accounts/&lt;id&gt;/</td><td>DELETE</td><td>Close a specific account.</td><td>ID in URL</td></tr>
+                        <tr><td>Banking</td><td>/api/accounts/&lt;id&gt;/topup/</td><td>POST</td><td>Add money to the balance.</td><td>Amount</td></tr>
+                        <tr><td>Money</td><td>/api/payments/transfer/</td><td>POST</td><td>Move money between accounts.</td><td>Sender ID, Receiver ID, Amount</td></tr>
+                        <tr><td>Money</td><td>/api/payments/transactions/</td><td>GET</td><td>View your transfer history.</td><td>None (Requires Token)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- 1. AUTHENTICATION SECTION -->
         <div id="auth-section" class="grid grid-2">
@@ -204,7 +260,7 @@
             const refresh = localStorage.getItem('refresh');
             if (!refresh) return false;
 
-            const res = await fetch(`${API_BASE}/token/refresh/`, {
+            const res = await fetch(`${API_BASE}/auth/refresh/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh })
