@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadMAX Banking</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --red: #ef4444;
+            --green: #16a34a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); }
+        .logo span { color: var(--primary); }
+
+        /* --- UI COMPONENTS --- */
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .grid { display: grid; gap: 20px; grid-template-columns: 1fr; }
+
+        @media (min-width: 768px) {
+            .grid-2 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-danger { background: #fee2e2; color: var(--red); }
+        .btn-success { background: var(--green); color: white; }
+
+        /* --- DASHBOARD ELEMENTS --- */
+        .acc-item {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .balance { font-size: 1.8rem; font-weight: 800; color: var(--text-main); }
+        .hidden { display: none !important; }
+
+        .table-wrap { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { text-align: left; padding: 12px; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">LeadMAX <span>Bank</span></div>
+            <button id="logout-btn" class="btn btn-danger hidden" onclick="logout()" style="width: auto;">Logout</button>
+        </header>
+
+        <!-- 1. AUTHENTICATION SECTION -->
+        <div id="auth-section" class="grid grid-2">
+            <div class="card">
+                <h3>Create Account</h3>
+                <input id="reg-user" type="text" placeholder="Username (Required)">
+                <input id="reg-email" type="email" placeholder="Email">
+                <div class="grid grid-2" style="gap:10px">
+                    <input id="reg-fn" type="text" placeholder="First Name">
+                    <input id="reg-ln" type="text" placeholder="Last Name">
+                </div>
+                <input id="reg-pass" type="password" placeholder="Password">
+                <button onclick="register()" class="btn btn-primary">Sign Up</button>
+            </div>
+
+            <div class="card">
+                <h3>Login</h3>
+                <input id="login-user" type="text" placeholder="Username">
+                <input id="login-pass" type="password" placeholder="Password">
+                <button onclick="login()" class="btn btn-primary">Enter Dashboard</button>
+            </div>
+        </div>
+
+        <!-- 2. MAIN DASHBOARD SECTION -->
+        <div id="dashboard" class="hidden">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <h2>Your Accounts</h2>
+                    <button onclick="createAccount()" class="btn btn-success" style="width:auto;">+ Open Account</button>
+                </div>
+                <div id="accounts-list" class="grid grid-3" style="margin-top:20px;">
+                    <!-- Accounts injected here -->
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <!-- Payment Section -->
+                <div class="card">
+                    <h3>Transfer Funds</h3>
+                    <div class="grid grid-2" style="gap:10px">
+                        <input id="sender-id" type="number" placeholder="Your Acc ID">
+                        <input id="receiver-id" type="number" placeholder="Recipient Acc ID">
+                    </div>
+                    <input id="amount" type="number" placeholder="Amount ($)">
+                    <button onclick="makeTransfer()" class="btn btn-primary">Execute Payment</button>
+                </div>
+
+                <!-- History Section -->
+                <div class="card">
+                    <h3>Transaction Log</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>Ref</th><th>Receiver</th><th>Amount</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="tx-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000/api";
+        let access = localStorage.getItem('access');
+
+        // --- AUTH WRAPPER (Handles 401 & Refresh) ---
+        async function apiRequest(url, method = 'GET', body = null) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (access) headers['Authorization'] = `Bearer ${access}`;
+
+            let options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+
+            let res = await fetch(url, options);
+
+            if (res.status === 401) {
+                const refreshed = await doRefresh();
+                if (refreshed) {
+                    headers['Authorization'] = `Bearer ${access}`;
+                    res = await fetch(url, options);
+                }
+            }
+            return res;
+        }
+
+        async function doRefresh() {
+            const refresh = localStorage.getItem('refresh');
+            if (!refresh) return false;
+
+            const res = await fetch(`${API_BASE}/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                access = data.access;
+                localStorage.setItem('access', access);
+                return true;
+            }
+            logout();
+            return false;
+        }
+
+        // --- AUTH ACTIONS ---
+        async function register() {
+            const payload = {
+                username: document.getElementById('reg-user').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value,
+                first_name: document.getElementById('reg-fn').value,
+                last_name: document.getElementById('reg-ln').value
+            };
+            const res = await fetch(`${API_BASE}/users/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) alert("User Created! Please Login.");
+            else alert("Error creating user.");
+        }
+
+        async function login() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+
+            const res = await fetch(`${API_BASE}/auth/login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                access = data.access;
+                localStorage.setItem('access', access);
+                localStorage.setItem('refresh', data.refresh);
+                initDashboard();
+            } else { alert("Login Failed"); }
+        }
+
+        function initDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+            refreshUI();
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        // --- BANKING ACTIONS ---
+        async function loadAccounts() {
+            const res = await apiRequest(`${API_BASE}/accounts/`);
+            if (!res.ok) return;
+            const accounts = await res.json();
+            const container = document.getElementById('accounts-list');
+            container.innerHTML = accounts.map(a => `
+                <div class="acc-item">
+                    <small style="color:var(--primary)">ID: ${a.id}</small>
+                    <div class="balance">$${a.balance}</div>
+                    <small>${a.account_number}</small>
+                    <div style="display:flex; gap:5px; margin-top:10px;">
+                        <input id="tp-${a.id}" type="number" placeholder="Amt" style="margin:0; padding:5px;">
+                        <button onclick="topUp(${a.id})" class="btn btn-primary" style="padding:5px 10px; width:auto;">Topup</button>
+                    </div>
+                    <button onclick="closeAcc(${a.id})" style="background:none; border:none; color:var(--red); font-size:11px; cursor:pointer; margin-top:10px;">Close Account</button>
+                </div>
+            `).join('');
+        }
+
+        async function topUp(id) {
+            const amount = document.getElementById(`tp-${id}`).value;
+            const res = await apiRequest(`${API_BASE}/accounts/${id}/topup/`, 'POST', { amount });
+            if (res.ok) refreshUI();
+        }
+
+        async function makeTransfer() {
+            const body = {
+                sender_account_id: document.getElementById('sender-id').value,
+                receiver_account_id: document.getElementById('receiver-id').value,
+                amount: document.getElementById('amount').value
+            };
+            const res = await apiRequest(`${API_BASE}/payments/transfer/`, 'POST', body);
+            const data = await res.json();
+            alert(data.message || data.error);
+            refreshUI();
+        }
+
+        async function closeAcc(id) {
+            if (confirm("Delete this account?")) {
+                const res = await apiRequest(`${API_BASE}/accounts/${id}/`, 'DELETE');
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.error);
+                }
+                refreshUI();
+            }
+        }
+
+        async function loadHistory() {
+            const res = await apiRequest(`${API_BASE}/payments/transactions/`);
+            if (res.ok) {
+                const txs = await res.json();
+                document.getElementById('tx-history').innerHTML = txs.map(t => `
+                    <tr>
+                        <td>${t.id}</td>
+                        <td>#${t.receiver_account}</td>
+                        <td style="color:${t.status === 'SUCCESS' ? 'green' : 'red'}">$${t.amount}</td>
+                        <td><small>${t.status}</small></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function refreshUI() { loadAccounts(); loadHistory(); }
+
+        if (access) initDashboard();
+    </script>
+</body>
+</html>

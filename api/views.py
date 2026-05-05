@@ -47,6 +47,15 @@ class BankAccountDeleteView(generics.DestroyAPIView):
     def get_queryset(self):
         return BankAccount.objects.filter(user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.balance > 0:
+            return Response(
+                {"error": "Cannot delete account with an active balance. Please transfer funds first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+        
 class BankAccountTopUpView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -69,10 +78,13 @@ class DoPaymentView(APIView):
     def post(self, request):
         sender_id = request.data.get('sender_account_id')
         receiver_id = request.data.get('receiver_account_id')
-        amount = Decimal(request.data.get('amount', 0))
+        amount = Decimal(str(request.data.get('amount', 0)))
 
         if amount <= 0:
             return Response({"error": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if sender_id == receiver_id:
+            return Response({"error": "Sender and receiver accounts must be different."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
@@ -80,7 +92,12 @@ class DoPaymentView(APIView):
                 receiver = BankAccount.objects.select_for_update().get(id=receiver_id)
 
                 if sender.balance < amount:
-                    Transaction.objects.create(sender_account=sender, receiver_account=receiver, amount=amount, status='FAILED')
+                    Transaction.objects.create(
+                        sender_account=sender, 
+                        receiver_account=receiver, 
+                        amount=amount, 
+                        status='FAILED'
+                    )
                     return Response({"error": "Insufficient balance"}, status=status.HTTP_400_BAD_REQUEST)
 
                 sender.balance -= amount
@@ -88,11 +105,18 @@ class DoPaymentView(APIView):
                 receiver.balance += amount
                 receiver.save()
 
-                Transaction.objects.create(sender_account=sender, receiver_account=receiver, amount=amount, status='SUCCESS')
-                return Response({"message": "Payment successful"})
+                Transaction.objects.create(
+                    sender_account=sender, 
+                    receiver_account=receiver, 
+                    amount=amount, 
+                    status='SUCCESS'
+                )
+                
+                msg = "Internal transfer successful" if sender.user == receiver.user else "Payment successful"
+                return Response({"message": msg})
 
         except BankAccount.DoesNotExist:
-            return Response({"error": "Account not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "One or both accounts not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class TransactionListView(generics.ListAPIView):
     serializer_class = TransactionSerializer
